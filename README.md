@@ -114,7 +114,7 @@ Examples
 ### Executable Examples
 
 <pre>
-<?php
+&lt;?php
 
 include &#39;flow.php&#39;;
 
