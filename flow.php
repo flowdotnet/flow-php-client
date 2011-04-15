@@ -12,7 +12,7 @@ class Flow_Exception extends Exception {
 
 class Flow {
   const HOST    = 'api.flow.net';
-  const FS_HOST = 'fs.flow.net';
+  const FS_HOST = 'file.flow.net';
   const PORT    = 80;
 
   const MIME_XML  = 'text/xml';
