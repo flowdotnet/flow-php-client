@@ -45,6 +45,9 @@ if(!function_exists('mb_strlen')) {
   }
 }
 
+/**
+ * Simple logging utility to log to a file or stdout
+ */
 class Flow_Logger {
   const DEBUG   = 1;
   const INFO    = 2;
@@ -67,6 +70,13 @@ class Flow_Logger {
     if($this->file) fclose($this->file);
   }
 
+  /**
+   * Write to the log by invoking a method with the
+   * name of the desired log level
+   *
+   *    $logger->info('Lorem ipsum');
+   *    $logger->debug('Lorem ipsum');
+   */
   function __call($method, array $params) {
     $level_key = strtoupper($method);
 
@@ -78,6 +88,9 @@ class Flow_Logger {
     }
   }
 
+  /**
+   * Write to the log with the specified log level
+   */
   function log($level, $msg) {
     if($level >= $this->level) {
       $date_stamp   = '[' . date(self::$dateformat) . ']';
@@ -96,12 +109,21 @@ class Flow_Logger {
   }
 }
 
+/**
+ * Simple base exception for client library errors
+ */
 class Flow_Rest_Client_Exception extends Exception {
   function __construct($msg) {
     parent::__construct($msg, 0);
   }
 }
 
+/**
+ * A handle to the Flow Platform's RESTful API
+ *
+ * The client is responsible for authenticating 
+ * and executing requests (via CURL). 
+ */
 class Flow_Rest_Client {
   const HOST    = 'localhost';
   const PORT    = 8080;
@@ -165,16 +187,25 @@ class Flow_Rest_Client {
     return $this;
   }
 
+  /**
+   * Query parameters to be applied to every request.
+   */
   function set_global_query_params(array $query_params) {
     $this->query_params = $query_params;
     return $this;
   }
 
+  /**
+   * Headers to be applied to every request
+   */
   function set_global_headers(array $headers) {
     $this->headers = $headers;
     return $this;
   }
 
+  /**
+   * CURL invocation
+   */
   protected function exec_request($uri, array $co=array()) {
     $uri = self::HOST . ':' . self::PORT . $uri;
 
@@ -216,6 +247,9 @@ class Flow_Rest_Client {
     return $response;
   }
 
+  /**
+   * Prepare a request for invocation
+   */
   protected function request($uri, array $query_params=array(), array $headers=array(), $copts) {
     $this->headers_to_CURLOPTS($headers, &$copts);
 
@@ -232,6 +266,9 @@ class Flow_Rest_Client {
     return $this->exec_request($uri, $copts);
   }
 
+  /**
+   * Generate authentication headers
+   */
   protected function credentials() {
     $signature = '';
     $credentials = array(
@@ -273,11 +310,17 @@ class Flow_Rest_Client {
     return http_build_query($params + $this->query_params, NULL, '&');
   }
 
+  /**
+   * Execute a HTTP GET request
+   */
   function http_get($url, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_HTTPGET => TRUE);
     return $this->request($url, $query_params, $headers, $copts);
   }
 
+  /**
+   * Execute a HTTP POST request
+   */
   function http_post($url, $data, array $query_params=array(), array $headers=array()) {
     $copts = array(
       CURLOPT_POST => TRUE,
@@ -287,6 +330,9 @@ class Flow_Rest_Client {
     return $this->request($url, $query_params, $headers, $copts);
   }
 
+  /**
+   * Execute a HTTP PUT request
+   */
   function http_put($url, $data, array $query_params=array(), array $headers=NULL) {
     $copts = array(
       CURLOPT_CUSTOMREQUEST => 'PUT',
@@ -296,12 +342,20 @@ class Flow_Rest_Client {
     return $this->request($url, $query_params, $headers, $copts);
   }
 
+  /**
+   * Execute a HTTP DELETE request
+   */
   function http_delete($url, $data=NULL, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_CUSTOMREQUEST => 'DELETE');
     return $this->request($url, $query_params, $headers, $copts);
   }
 }
 
+/**
+ * A decorator around the Flow_Rest_Client
+ * to parse and deliver Flow Platform requests
+ * as a specified format
+ */
 abstract class Flow_Marshaling_Rest_Client {
   protected $mime_type;
   protected $client;
@@ -323,45 +377,84 @@ abstract class Flow_Marshaling_Rest_Client {
     $this->client = $client;
   }
 
+  /**
+   * Proxy method calls to the Flow_Rest_Client
+   */
   function __call($method, array $args) {
     return call_user_func_array(array($this->client, $method), $args);
   }
 
+  /**
+   * Was the request successful?
+   */
   abstract protected function response_ok($response);
 
+  /**
+   * Response metadata
+   */
   abstract protected function response_head($response);
 
+  /**
+   * Response data
+   */
   abstract protected function response_body($response);
 
+  /**
+   * Convert a value to the client's data format
+   */
   function marshal($obj) {
     return $this->marshaler->dumps($obj);
   }
 
+  /**
+   * Parse a value from the client's data format
+   */
   function unmarshal($str, $obj=NULL) {
     return $this->marshaler->loads($str, $obj);
   }
 
+  /**
+   * Execute a HTTP request that will hit a
+   * Flow Platform endpoint to create a domain object
+   */
   function create($class, $uri, $data) {
     $response = $this->http_post($uri, $data);
     return new $class($this->response_body($response));
   }
 
+  /**
+   * Execute a HTTP request that will hit a
+   * Flow Platform endpoint to update a domain object
+   */
   function update($class, $uri, $data) {
     $response = $this->http_put($uri, $data);
     return new $class($this->response_body($response));
   }
 
+  /**
+   * Execute a HTTP request that will hit a
+   * Flow Platform endpoint to delete a domain object
+   */
   function delete($class, $uri, $data=NULL) {
     $headers = $data != NULL ? array('Content-type' => $this->mime_type) : array();
     $response = $this->http_delete($uri, $data, array(), $headers);
     return $this->response_ok($response);
   }
 
+  /**
+   * Execute a HTTP request that will hit a
+   * Flow Platform endpoint to retrieve a single
+   * domain object
+   */
   function find_one($class, $uri) {
     $response = $this->http_get($uri);
     return new $class($this->response_body($response));
   }
 
+  /**
+   * Execute a HTTP request that will hit a
+   * Flow Platform endpoint to retrieve many domain objects
+   */
   function find_many($class, $uri, array $criteria=array(), array $query_params=array()) {
     if(count($criteria)) {
       if(array_key_exists('filter', $query_params))
@@ -379,6 +472,10 @@ abstract class Flow_Marshaling_Rest_Client {
   }
 }
 
+/**
+ * A marshaling Flow_Rest_Client that uses JSON 
+ * as its data interchange format
+ */
 class Flow_Json_Rest_Client extends Flow_Marshaling_Rest_Client {
   function __construct(array $opts) {
     $this->mime_type = Flow_Rest_Client::MIME_JSON;
@@ -414,6 +511,10 @@ class Flow_Json_Rest_Client extends Flow_Marshaling_Rest_Client {
   }
 }
 
+/**
+ * A marshaling Flow_Rest_Client that uses XML 
+ * as its data interchange format
+ */
 class Flow_Xml_Rest_Client extends Flow_Marshaling_Rest_Client {
   function __construct(array $opts) {
     $this->mime_type = Flow_Rest_Client::MIME_XML;
@@ -422,18 +523,23 @@ class Flow_Xml_Rest_Client extends Flow_Marshaling_Rest_Client {
   }
 
   protected function response_ok($xml_response) {
-
+    // method not yet implemented
   }
 
   protected function response_head($xml_response) {
-
+    // method not yet implemented
   }
 
   protected function response_body($xml_response) {
-
+    // method not yet implemented
   }
 }
 
+/**
+ * A base class for providing a means to take arbitrary objects
+ * and serialize and deseriale them to and from a specified
+ * data format
+ */
 abstract class Flow_Marshaler { 
   abstract function from_string($str);
   abstract function to_string($obj);
@@ -455,6 +561,9 @@ abstract class Flow_Marshaler {
   }
 }
 
+/**
+ * Serialize and deserialize arbitrary values to and from JSON
+ */
 class Flow_Json_Marshaler extends Flow_Marshaler {
   function from_string($str) {
     return $this->from_json(json_decode($str, TRUE));
@@ -528,6 +637,9 @@ class Flow_Json_Marshaler extends Flow_Marshaler {
   }
 }
 
+/**
+ * Serialize and deserialize arbitrary values to and from XML
+ */
 class Flow_Xml_Marshaler extends Flow_Marshaler {
   function from_string($str) {
     $doc = new DOMDocument();
@@ -768,6 +880,12 @@ class Flow_Xml_Marshaler extends Flow_Marshaler {
   }
 }
 
+/**
+ * A means to provide an arbitrary object
+ * with behaviors to serialize and deserialize
+ * itself to and from the Flow Platform's accepted
+ * data interchange formats
+ */
 interface Flow_Marshalable {
  function from_json($str);
  function to_json();
@@ -776,6 +894,11 @@ interface Flow_Marshalable {
  function to_xml();
 }
 
+/**
+ * A flyweight for generating utility classes
+ * to generate the proper API endpoint URLs for 
+ * Flow Platform domain objects
+ */
 class Flow_Path_Resolver {
   private function __construct($classname) {
     $this->type_hint = strtolower(str_replace('Flow_', '', $classname));
@@ -808,6 +931,10 @@ class Flow_Path_Resolver {
   }
 }
 
+/**
+ * A base class for creating complex members or wrappers
+ * around primitive values for use as properties of Flow Domain objects
+ */
 abstract class Flow_Domain_Object_Member implements Flow_Marshalable {
   static $marshalers = array();
 
@@ -915,6 +1042,9 @@ abstract class Flow_Domain_Object_Member implements Flow_Marshalable {
   }
 }
 
+/**
+ * The permissions member type of a Flow Domain object
+ */
 class Flow_Permissions extends Flow_Domain_Object_Member {
   static $type_hint = 'permissions';
 
@@ -1262,6 +1392,9 @@ class Flow_Constraint extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * The base class for all top-level Flow Platform domain objects
+ */
 abstract class Flow_Domain_Object implements Flow_Marshalable {
   public $resolver;
 
@@ -1602,7 +1735,7 @@ class Flow_User extends Flow_Domain_Object {
   function __construct(array $members=NULL) {
     $this->members += array(
       'email'           => Flow_Domain_Object_Member::factory(NULL, 'email'),
-      'password'        => Flow_Domain_Object_Member::factory(NULL, 'string'),
+      'password'        => Flow_Domain_Object_Member::factory(NULL, 'password'),
       'defaultIdentity' => Flow_Domain_Object_Member::factory(NULL, 'identity'),
       'permissions'     => Flow_Domain_Object_Member::factory(NULL, 'permissions'));
 
