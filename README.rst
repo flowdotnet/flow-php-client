@@ -13,14 +13,16 @@ No build necessary.
 
 Simply include / require 'flow.php' in your PHP program.
 
-    <?php
+::
+  <?php
    
-    include 'flow.php';
+  include 'flow.php';
 
 Testing
 =======
 
-    $ cd tests
-    $ phpunit --configuration flow_tests.xml
+::
+  $ cd tests
+  $ phpunit --configuration flow_tests.xml
 
 
