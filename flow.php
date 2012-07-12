@@ -653,10 +653,10 @@ class Flow_Xml_Marshaler extends Flow_Marshaler {
 
   private function from_xml_to_array($xml) {
     $type = func_num_args() == 2 ? func_get_arg(1) : 'list';
-    $return = array();
+    $values = array();
 
     foreach($xml->childNodes as $e) if($e->nodeName != '#text')
-      array_push($return, $this->from_xml($e));
+      array_push($values, $this->from_xml($e));
 
     return array('type' => $type, 'value' => $values);
   }
@@ -1083,11 +1083,11 @@ class Flow_Application_Template extends Flow_Domain_Object_Member {
 
     $flows_with_type  = array('type' => 'list', 'value' => $this->userFlows);
     $flows_with_label = array('userFlows', $flows_with_type);
-    $flows_as_xml     = $marshaler->to_xml($flows_with_label);
+    $flows_as_xml     = $marshaler->to_xml($flows_with_label, $doc);
 
     $tracks_with_type   = array('type' => 'list', 'value' => $this->userTracks);
     $tracks_with_label  = array('userTracks', $tracks_with_type);
-    $tracks_as_xml      = $marshaler->to_xml($tracks_with_label);
+    $tracks_as_xml      = $marshaler->to_xml($tracks_with_label, $doc);
 
     $root->appendChild($flows_as_xml);
     $root->appendChild($tracks_as_xml);
@@ -1133,7 +1133,7 @@ class Flow_Flow_Template extends Flow_Domain_Object_Member {
 
     $drops_with_type = array('type' => 'list', 'value' => $this->dropElements);
     $drops_with_label = array('dropElements', $drops_with_type);
-    $drops_as_xml = $marshaler->to_xml($drops_with_label);
+    $drops_as_xml = $marshaler->to_xml($drops_with_label, $doc);
 
     $root->appendChild($name_node);
     $root->appendChild($display_name_node);
