@@ -125,8 +125,8 @@ class Flow_Rest_Client_Exception extends Exception {
  * and executing requests (via CURL). 
  */
 class Flow_Rest_Client {
-  const HOST    = 'localhost';
-  const PORT    = 8080;
+  const HOST    = 'api.flow.net';
+  const PORT    = 80;
 
   const MIME_XML  = 'text/xml';
   const MIME_JSON = 'application/json';
@@ -313,41 +313,41 @@ class Flow_Rest_Client {
   /**
    * Execute a HTTP GET request
    */
-  function http_get($url, array $query_params=array(), array $headers=array()) {
+  function http_get($uri, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_HTTPGET => TRUE);
-    return $this->request($url, $query_params, $headers, $copts);
+    return $this->request($uri, $query_params, $headers, $copts);
   }
 
   /**
    * Execute a HTTP POST request
    */
-  function http_post($url, $data, array $query_params=array(), array $headers=array()) {
+  function http_post($uri, $data, array $query_params=array(), array $headers=array()) {
     $copts = array(
       CURLOPT_POST => TRUE,
       CURLOPT_POSTFIELDS => $data
     );
 
-    return $this->request($url, $query_params, $headers, $copts);
+    return $this->request($uri, $query_params, $headers, $copts);
   }
 
   /**
    * Execute a HTTP PUT request
    */
-  function http_put($url, $data, array $query_params=array(), array $headers=NULL) {
+  function http_put($uri, $data, array $query_params=array(), array $headers=NULL) {
     $copts = array(
       CURLOPT_CUSTOMREQUEST => 'PUT',
       CURLOPT_POSTFIELDS => $data
     );
 
-    return $this->request($url, $query_params, $headers, $copts);
+    return $this->request($uri, $query_params, $headers, $copts);
   }
 
   /**
    * Execute a HTTP DELETE request
    */
-  function http_delete($url, $data=NULL, array $query_params=array(), array $headers=array()) {
+  function http_delete($uri, $data=NULL, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_CUSTOMREQUEST => 'DELETE');
-    return $this->request($url, $query_params, $headers, $copts);
+    return $this->request($uri, $query_params, $headers, $copts);
   }
 }
 
