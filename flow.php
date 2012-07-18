@@ -93,8 +93,9 @@ class Flow_Logger {
    */
   function log($level, $msg) {
     if($level >= $this->level) {
-      $date_stamp   = '[' . date(self::$dateformat) . ']';
-      $level_stamp  = '[' . key($this->level, $this->levels) . ']';
+      $datestamp   = '[' . date(self::$dateformat) . ']';
+      $levelstamps = array_flip($this->levels);
+      $levelstamp  = '[' . $levelstamps[$this->level] . ']';
 
       fwrite($this->file, "$datestamp $levelstamp $msg \n");
     }
@@ -210,16 +211,16 @@ class Flow_Rest_Client {
     $uri = self::HOST . ':' . self::PORT . $uri;
 
     switch(TRUE) {
-    case $co[CURLOPT_HTTPGET]:
+    case isset($co[CURLOPT_HTTPGET]):
       $method = 'GET';
       break;
-    case $co[CURLOPT_POST]:
+    case isset($co[CURLOPT_POST]):
       $method = 'POST';
       break;
-    case $co[CURLOPT_CUSTOMREQUEST] == 'PUT':
+    case isset($co[CURLOPT_CUSTOMREQUEST]) && $co[CURLOPT_CUSTOMREQUEST] == 'PUT':
       $method = 'PUT';
       break;
-    case $co[CURLOPT_CUSTOMREQUEST] == 'DELETE':
+    case isset($co[CURLOPT_CUSTOMREQUEST]) && $co[CURLOPT_CUSTOMREQUEST] == 'DELETE':
       $method = 'DELETE';
       break;
     case isset($co[CURLOPT_CUSTOMREQUEST]):
@@ -227,8 +228,11 @@ class Flow_Rest_Client {
       break;
     }
 
-    $log_msg .= "\n-- Begin REST Request --\nHTTP 1.1 $method $uri\n";
-    $log_msg .= "-H " . implode(",", $co[CURLOPT_HTTPHEADER]) . "\n-d " . $co[CURLOPT_POSTFIELDS];
+    $log_msg  = "\n-- Begin REST Request --\nHTTP 1.1 $method $uri\n";
+    $log_msg .= "-H " . implode(",", $co[CURLOPT_HTTPHEADER]);
+
+    if(isset($co[CURLOPT_POSTFIELDS]))
+      $log_msg .= "\n-d " . $co[CURLOPT_POSTFIELDS];
 
     $co[CURLOPT_HTTPHEADER][]   = 'Expect:';
     $co[CURLOPT_RETURNTRANSFER] = TRUE;
@@ -236,7 +240,7 @@ class Flow_Rest_Client {
     $co[CURLOPT_TIMEOUT]        = 60;
     $co[CURLOPT_USERAGENT]      = 'flow-php-client_0.1';
 
-    $ch = curl_init($fq_uri);
+    $ch = curl_init($uri);
     curl_setopt_array($ch, $co);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -288,16 +292,16 @@ class Flow_Rest_Client {
 
   protected function headers_to_CURLOPTS(array $headers, array $co) {
     switch(TRUE) {
-    case $co[CURLOPT_HTTPGET]:
+    case isset($co[CURLOPT_HTTPGET]):
       $headers += $this->headers[self::GET];
       break;
-    case $co[CURLOPT_POST]:
+    case isset($co[CURLOPT_POST]):
       $headers += $this->headers[self::POST];
       break;
-    case $co[CURLOPT_CUSTOMREQUEST] == 'PUT':
+    case isset($co[CURLOPT_CUSTOMREQUEST]) && $co[CURLOPT_CUSTOMREQUEST] == 'PUT':
       $headers += $this->headers[self::PUT];
       break;
-    case $co[CURLOPT_CUSTOMREQUEST] == 'DELETE':
+    case isset($co[CURLOPT_CUSTOMREQUEST]) && $co[CURLOPT_CUSTOMREQUEST] == 'DELETE':
       $headers += $this->headers[self::DELETE];
       break;
     }
@@ -333,7 +337,7 @@ class Flow_Rest_Client {
   /**
    * Execute a HTTP PUT request
    */
-  function http_put($uri, $data, array $query_params=array(), array $headers=NULL) {
+  function http_put($uri, $data, array $query_params=array(), array $headers=array()) {
     $copts = array(
       CURLOPT_CUSTOMREQUEST => 'PUT',
       CURLOPT_POSTFIELDS => $data
@@ -347,6 +351,16 @@ class Flow_Rest_Client {
    */
   function http_delete($uri, $data=NULL, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_CUSTOMREQUEST => 'DELETE');
+    if(isset($data)) $copts[CURLOPT_POSTFIELDS] = $data; 
+    return $this->request($uri, $query_params, $headers, $copts);
+  }
+
+  /**
+   * Execute an arbitrary HTTP method request
+   */
+  function http_request($method, $uri, $data=NULL, array $query_params=array(), array $headers=array()) {
+    $copts = array(CURLOPT_CUSTOMREQUEST => $method);
+    if(isset($data)) $copts[CURLOPT_POSTFIELDS] = $data; 
     return $this->request($uri, $query_params, $headers, $copts);
   }
 }
@@ -993,8 +1007,11 @@ abstract class Flow_Domain_Object_Member implements Flow_Marshalable {
       if(is_array($value))
         $value = self::complex_instance_from_array($type, $value);
 
+      if(is_string($value))
+        $value = self::complex_instance_from_string($type, $value);
+
       else
-        $value = self::complex_instance_from_string($type);
+        $value = self::complex_instance_from_null($type);
     }
 
     return array('type' => $type, 'value' => $value);
@@ -1028,13 +1045,18 @@ abstract class Flow_Domain_Object_Member implements Flow_Marshalable {
     return self::complex_instance_from_array(new Flow_Constraint(), func_get_args());
   }
 
-  private static function complex_instance_from_string($type) {
-    return call_user_func("Flow_Domain_Object_Member::$type");
-  }
-
   private static function complex_instance_from_array($instance, array $args) {
     call_user_func_array(array($instance, '__construct'), $args);
     return $instance;
+  }
+
+  private static function complex_instance_from_string($instance, $arg) {
+    call_user_func(array($instance, '__construct'), $arg);
+    return $instance;
+  }
+
+  private static function complex_instance_from_null($type) {
+    return call_user_func("Flow_Domain_Object_Member::$type");
   }
 
   function __construct() {
@@ -1700,10 +1722,10 @@ class Flow_Identity extends Flow_Domain_Object {
       'firstName'   => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'lastName'    => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'alias'       => Flow_Domain_Object_Member::factory(NULL, 'string'),
-      'avatar'      => Flow_Domain_Object_Member::factory(NULL, 'fileRef'),
-      'groupIds'    => Flow_Domain_Object_Member::factory(NULL, 'list'),
+      'avatar'      => Flow_Domain_Object_Member::factory(NULL, 'url'),
       'userId'      => Flow_Domain_Object_Member::factory(NULL, 'id'),
-      'appIds'      => Flow_Domain_Object_Member::factory(NULL, 'list'),
+      'groupIds'    => Flow_Domain_Object_Member::factory(NULL, 'set'),
+      'appIds'      => Flow_Domain_Object_Member::factory(NULL, 'set'),
       'permissions' => Flow_Domain_Object_Member::factory(NULL, 'permissions'));
 
     parent::__construct($members);

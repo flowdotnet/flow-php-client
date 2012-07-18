@@ -116,3 +116,44 @@ class Flow_Xml_Marshaler_Test extends Flow_Marshaler_Test {
   }
 }
 
+class Flow_Rest_Client_Test extends PHPUnit_Framework_TestCase {
+  function __construct() {
+    parent::__construct();
+    $key = 'foo';
+    $secret = 'bar';
+    $actor = 'baz';
+    $this->client = new Flow_Rest_Client(array('key' => $key, 'secret' => $secret, 'actor' => $actor));
+    $this->client->set_log_level(Flow_Logger::DEBUG);
+  }
+
+  function test_http_post() {
+    $this->client->http_post('/foo', 'test');  
+  }
+
+  /**
+   * @depends test_http_post
+   */
+  function test_http_get() {
+    $this->client->http_get('/foo');  
+  }
+
+  /**
+   * @depends test_http_post
+   */
+  function test_http_put() {
+    $this->client->http_put('/foo', 'test');  
+  }
+
+  /**
+   * @depends test_http_post
+   */
+  function test_http_delete() {
+    $this->client->http_delete('/foo');  
+    $this->client->http_delete('/foo', 'test');  
+  }
+
+  function test_http_head() {
+    $this->client->http_request('HEAD', '/foo');  
+    $this->client->http_request('HEAD', '/foo', 'test');  
+  }
+}
