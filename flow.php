@@ -1198,6 +1198,9 @@ class Flow_Permissions extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Application_Template extends Flow_Domain_Object_Member {
   static $type_hint = 'applicationTemplate';
 
@@ -1248,6 +1251,9 @@ class Flow_Application_Template extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Flow_Template extends Flow_Domain_Object_Member {
   static $type_hint = 'flowTemplate';
 
@@ -1295,6 +1301,9 @@ class Flow_Flow_Template extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Track_Template extends Flow_Domain_Object_Member {
   static $type_hint = 'trackTemplate';
 
@@ -1326,6 +1335,9 @@ class Flow_Track_Template extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Drop_Template extends Flow_Domain_Object_Member {
   static $type_hint = 'dropTemplate';
 
@@ -1355,6 +1367,9 @@ class Flow_Drop_Template extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Constraints extends Flow_Domain_Object_Member {
   static $type_hint = 'constraints';
 
@@ -1385,6 +1400,9 @@ class Flow_Constraints extends Flow_Domain_Object_Member {
   }
 }
 
+/**
+ * Not yet implemented
+ */
 class Flow_Constraint extends Flow_Domain_Object_Member {
   static $type_hint = 'constraint';
 
@@ -1589,7 +1607,7 @@ abstract class Flow_Domain_Object implements Flow_Marshalable {
     }
   }
 
-  static $types = array('application', 'flow', 'comment', 'drop', 'file', 'group', 'identity', 'track', 'user');
+  static $types = array('application', 'flow', 'drop', 'file', 'group', 'identity', 'track', 'user');
 
   static function factory($type, $data=array()) {
     $classname = 'Flow_' . ucfirst($type);
@@ -1605,15 +1623,17 @@ class Flow_Application extends Flow_Domain_Object {
     $this->members += array(
       'name'            => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'displayName'     => Flow_Domain_Object_Member::factory(NULL, 'string'),
+      'key'             => Flow_Domain_Object_Member::factory(NULL, 'string'),
+      'secret'          => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'description'     => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'email'           => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'url'             => Flow_Domain_Object_Member::factory(NULL, 'url'),
       'icon'            => Flow_Domain_Object_Member::factory(NULL, 'url'),
+      'groupId'         => Flow_Domain_Object_Member::factory(NULL, 'id'),
       'isDiscoverable'  => Flow_Domain_Object_Member::factory(NULL, 'boolean'),
       'isInviteOnly'    => Flow_Domain_Object_Member::factory(NULL, 'boolean'),
 
       'applicationTemplate' => Flow_Domain_Object_Member::factory(NULL, 'applicationTemplate'),
-      'flowRefs'            => Flow_Domain_Object_Member::factory(NULL, 'set'),
       'permissions'         => array('type' => 'permissions', 'value' => $permissions));
 
     parent::__construct($members);
@@ -1646,6 +1666,10 @@ class Flow_Flow extends Flow_Domain_Object {
   }
 }
 
+/**
+ * @deprecated
+ */
+/*
 class Flow_Comment extends Flow_Domain_Object {
   function __construct(array $members=NULL) {
     $this->members += array(
@@ -1664,6 +1688,7 @@ class Flow_Comment extends Flow_Domain_Object {
     return parent::find($client, $argv, __CLASS__);
   }
 }
+*/
 
 class Flow_Drop extends Flow_Domain_Object {
   function __construct(array $members=NULL) {
@@ -1689,7 +1714,8 @@ class Flow_File extends Flow_Domain_Object {
     $this->members += array(
       'name'      => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'mimeType'  => Flow_Domain_Object_Member::factory(NULL, 'string'),
-      'contents'  => Flow_Domain_Object_Member::factory(NULL, 'bytes'));
+      'contents'  => Flow_Domain_Object_Member::factory(NULL, 'bytes'),
+      'metadata'  => Flow_Domain_Object_Member::factory(NULL, 'map'));
 
     parent::__construct($members);
   }
@@ -1703,8 +1729,10 @@ class Flow_Group extends Flow_Domain_Object {
   function __construct(array $members=NULL) {
     $this->members += array(
       'name'                => Flow_Domain_Object_Member::factory(NULL, 'string'),
+      'description'         => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'displayName'         => Flow_Domain_Object_Member::factory(NULL, 'string'),
-      'identities'          => Flow_Domain_Object_Member::factory(NULL, 'list'),
+      'icon'                => Flow_Domain_Object_Member::factory(NULL, 'url'),
+      'identities'          => Flow_Domain_Object_Member::factory(NULL, 'set'),
       'permissions'         => Flow_Domain_Object_Member::factory(NULL, 'permissions'),
       'identityPermissions' => Flow_Domain_Object_Member::factory(NULL, 'permissions'));
 
@@ -1742,7 +1770,6 @@ class Flow_Track extends Flow_Domain_Object {
       'from'              => Flow_Domain_Object_Member::factory(NULL, 'path'),
       'to'                => Flow_Domain_Object_Member::factory(NULL, 'path'),
       'filterString'      => Flow_Domain_Object_Member::factory(NULL, 'string'),
-      'transformFunction' => Flow_Domain_Object_Member::factory(NULL, 'string'),
       'permissions'       => Flow_Domain_Object_Member::factory(NULL, 'permissions'));
 
     parent::__construct($members);
@@ -1759,6 +1786,7 @@ class Flow_User extends Flow_Domain_Object {
       'email'           => Flow_Domain_Object_Member::factory(NULL, 'email'),
       'password'        => Flow_Domain_Object_Member::factory(NULL, 'password'),
       'defaultIdentity' => Flow_Domain_Object_Member::factory(NULL, 'identity'),
+      'identityIds'     => Flow_Domain_Object_Member::factory(NULL, 'set'),
       'permissions'     => Flow_Domain_Object_Member::factory(NULL, 'permissions'));
 
     parent::__construct($members);

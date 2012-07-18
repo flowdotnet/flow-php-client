@@ -44,10 +44,6 @@ $GLOBALS['example_bucket_5'] = new Flow_Flow(array(
   "path" => "/test/flow_php_client_example_bucket_5"
 ));
 
-$GLOBALS['example_comment'] = new Flow_Comment(array(
-  "text" => "Lorem ipsum dolor sit amet"
-));
-
 $GLOBALS['example_drop'] = new Flow_Drop(array(
   "elems" => array(
     "foo" => array("type" => "string", "value" => "Lorem ipsum"),
@@ -72,7 +68,6 @@ class Flow_Marshaler_Test extends PHPUnit_Framework_TestCase {
       $GLOBALS['example_bucket_3'],
       $GLOBALS['example_bucket_4'],
       $GLOBALS['example_bucket_5'],
-      $GLOBALS['example_comment'],
       $GLOBALS['example_drop']
     );
   }
@@ -152,8 +147,8 @@ class Flow_Rest_Client_Test extends PHPUnit_Framework_TestCase {
     $this->client->http_delete('/foo', 'test');  
   }
 
-  function test_http_head() {
-    $this->client->http_request('HEAD', '/foo');  
-    $this->client->http_request('HEAD', '/foo', 'test');  
+  function test_http_options() {
+    $this->client->http_request('OPTIONS', '/foo');  
+    $this->client->http_request('OPTIONS', '/foo', 'test');  
   }
 }
