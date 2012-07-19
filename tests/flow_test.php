@@ -114,9 +114,15 @@ class Flow_Xml_Marshaler_Test extends Flow_Marshaler_Test {
 class Flow_Rest_Client_Test extends PHPUnit_Framework_TestCase {
   function __construct() {
     parent::__construct();
-    $key = 'foo';
-    $secret = 'bar';
-    $actor = 'baz';
+
+    $key    = getenv('FLOW_API_KEY');
+    $secret = getenv('FLOW_API_SECRET');
+    $actor  = getenv('FLOW_API_ACTOR');
+
+    if(empty($key) || empty($secret) || empty($actor)) {
+      throw new Exception("FLOW_API_KEY, FLOW_API_SECRET, and FLOW_API_ACTOR must be defined in the system env.");
+    }
+
     $this->client = new Flow_Rest_Client(array('key' => $key, 'secret' => $secret, 'actor' => $actor));
     $this->client->set_log_level(Flow_Logger::DEBUG);
   }
@@ -136,7 +142,7 @@ class Flow_Rest_Client_Test extends PHPUnit_Framework_TestCase {
    * @depends test_http_post
    */
   function test_http_put() {
-    $this->client->http_put('/foo', 'test');  
+    $this->client->http_put('/foo', 'test');
   }
 
   /**

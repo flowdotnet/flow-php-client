@@ -4,5 +4,10 @@
       <directory suffix=".php">.</directory>
     </testsuite>
   </testsuites>
+  <php>
+    <env name="FLOW_API_KEY"    value=""/>
+    <env name="FLOW_API_SECRET" value=""/>
+    <env name="FLOW_API_ACTOR"  value=""/>
+  </php>
 </phpunit>
 
