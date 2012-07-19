@@ -247,7 +247,6 @@ class Flow_Rest_Client {
     $co[CURLOPT_CONNECTTIMEOUT] = 10;
     $co[CURLOPT_TIMEOUT]        = 60;
     $co[CURLOPT_USERAGENT]      = 'flow-php-client_0.1';
-    $co[CURLINFO_HEADER_OUT]    = TRUE;
 
     $ch = curl_init($uri);
     curl_setopt_array($ch, $co);
