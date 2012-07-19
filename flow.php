@@ -45,6 +45,10 @@ if(!function_exists('mb_strlen')) {
   }
 }
 
+if(!in_array('data', stream_get_wrappers())) {
+  throw new Exception('`flow` requires the PHP stream wrapper `data`.');
+}
+
 /**
  * Simple logging utility to log to a file or stdout
  */
@@ -233,12 +237,17 @@ class Flow_Rest_Client {
 
     if(isset($co[CURLOPT_POSTFIELDS]))
       $log_msg .= "\n-d " . $co[CURLOPT_POSTFIELDS];
+    else if(isset($co[CURLOPT_INFILE])) {
+      $log_msg .= "\n-d " . stream_get_contents($co[CURLOPT_INFILE]);
+      rewind($co[CURLOPT_INFILE]);
+    }
 
     $co[CURLOPT_HTTPHEADER][]   = 'Expect:';
     $co[CURLOPT_RETURNTRANSFER] = TRUE;
     $co[CURLOPT_CONNECTTIMEOUT] = 10;
     $co[CURLOPT_TIMEOUT]        = 60;
     $co[CURLOPT_USERAGENT]      = 'flow-php-client_0.1';
+    $co[CURLINFO_HEADER_OUT]    = TRUE;
 
     $ch = curl_init($uri);
     curl_setopt_array($ch, $co);
@@ -338,9 +347,12 @@ class Flow_Rest_Client {
    * Execute a HTTP PUT request
    */
   function http_put($uri, $data, array $query_params=array(), array $headers=array()) {
+    $stream = fopen('data:text/plain;base64,' . base64_encode($data), 'r');
     $copts = array(
       CURLOPT_CUSTOMREQUEST => 'PUT',
-      CURLOPT_POSTFIELDS => $data
+      CURLOPT_UPLOAD => TRUE,
+      CURLOPT_INFILE => $stream,
+      CURLOPT_INFILESIZE => strlen($data)
     );
 
     return $this->request($uri, $query_params, $headers, $copts);
@@ -351,7 +363,14 @@ class Flow_Rest_Client {
    */
   function http_delete($uri, $data=NULL, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_CUSTOMREQUEST => 'DELETE');
-    if(isset($data)) $copts[CURLOPT_POSTFIELDS] = $data; 
+
+    if(isset($data)) {
+      $stream = fopen('data:text/plain;base64,' . base64_encode($data), 'r');
+      $copts[CURLOPT_UPLOAD] = TRUE;
+      $copts[CURLOPT_INFILE] = $stream;
+      $copts[CURLOPT_INFILESIZE] = strlen($data);
+    }
+
     return $this->request($uri, $query_params, $headers, $copts);
   }
 
@@ -360,7 +379,14 @@ class Flow_Rest_Client {
    */
   function http_request($method, $uri, $data=NULL, array $query_params=array(), array $headers=array()) {
     $copts = array(CURLOPT_CUSTOMREQUEST => $method);
-    if(isset($data)) $copts[CURLOPT_POSTFIELDS] = $data; 
+
+    if(isset($data)) {
+      $stream = fopen('data:text/plain;base64,' . base64_encode($data), 'r');
+      $copts[CURLOPT_UPLOAD] = TRUE;
+      $copts[CURLOPT_INFILE] = $stream;
+      $copts[CURLOPT_INFILESIZE] = strlen($data);
+    }
+
     return $this->request($uri, $query_params, $headers, $copts);
   }
 }
